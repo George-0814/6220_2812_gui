@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1188</width>
+    <height>889</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QWidget" name="ui_plot_canva" native="true">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>160</y>
+      <width>811</width>
+      <height>631</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="keithley6220_statusbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>271</width>
+      <height>91</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>70</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Keithley 6220 status:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>210</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Keithley 2182A status:</string>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="keithley2182a_statusbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>240</y>
+      <width>271</width>
+      <height>91</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="start_cur_inputbox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>410</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>380</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>starting current</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="start_current_lab">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>380</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="stop_current_lab">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>470</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>470</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>stop current</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="stop_cur_inputbox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>500</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="current_step_lab">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>560</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>560</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>current step size</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="cur_step_inputbox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>590</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="doubleSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>670</y>
+      <width>151</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="prefix">
+     <string/>
+    </property>
+    <property name="suffix">
+     <string/>
+    </property>
+    <property name="decimals">
+     <number>4</number>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1188</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuConnect">
+    <property name="title">
+     <string>Connect</string>
+    </property>
+    <addaction name="actionKeithley6220"/>
+    <addaction name="actionKeithley_2182A"/>
+   </widget>
+   <widget class="QMenu" name="menuOperation">
+    <property name="title">
+     <string>Operation</string>
+    </property>
+    <addaction name="actionStart_i_v_measure"/>
+   </widget>
+   <addaction name="menuConnect"/>
+   <addaction name="menuOperation"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionKeithley6220">
+   <property name="text">
+    <string>Keithley6220</string>
+   </property>
+  </action>
+  <action name="actionKeithley_2182A">
+   <property name="text">
+    <string>Keithley 2182A</string>
+   </property>
+  </action>
+  <action name="actionStart_i_v_measure">
+   <property name="text">
+    <string>Start i-v measure</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
