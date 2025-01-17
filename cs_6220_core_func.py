@@ -22,6 +22,8 @@ class Keithley6220:
         self.under_arming = False
         self.compliance_voltage = None
         self.compliance_abort = None
+        self.output_state = None  # Stores ON/OFF state of the output
+        self.inner_shield_status = None  # Stores inner shield state (GUARD or OLOW)
 
     def send_command_to_6220(self, command: str):
         """Send a command to the 6220 with no response expected."""
@@ -35,6 +37,7 @@ class Keithley6220:
         """
         Send a query command to the 6220 and return the response.
         Handles empty responses, error messages, and unexpected results.
+        :return: The response from the 6220, or None if an error occurs.
         """
         try:
             # Send the query and strip the response
@@ -94,9 +97,10 @@ class Keithley6220:
             self.instrument.write(send_command)
 
             # Retrieve the response
-            self.instrument.write("SYST:COMM:SER:ENT?")
-            response = self.instrument.read().strip()
+
+            response = self.instrument.query("SYST:COMM:SER:ENT?").strip()
             print(f"Query sent to 2182A: {command}, Response: {response}")
+            buf_clear = self.instrument.read()  # Clear the buffer
             return response
         except Exception as e:
             print(f"Error querying 2182A: {e}")
@@ -138,9 +142,8 @@ class Keithley6220:
         Test function to check if the pyvisa library is loaded.
         """
         try:
-            # Initialize the ResourceManager
-            rm = pyvisa.ResourceManager()
-            return " PY library loaded successfully."
+
+            return " Py library loaded successfully."
         except Exception as e:
             return f"Error loading pyvisa library: {e}"
 
@@ -222,7 +225,8 @@ class Keithley6220:
             self.validate_param("Stop value", stop, min_val=-105e-3, max_val=105e-3)
             self.validate_param("Step size", step, 1e-12, 105e-3)  # Step must be > 0
             self.validate_param("Delay value", delay, 1e-3, 9999.999)
-            self.validate_param("Delta value", delta, 0, 105e-3)
+            # todo: check the minimal delta value
+            self.validate_param("Delta value", delta, 1e-5, 105e-3)
                 # Check if stop point is greater than start point
             if stop <= start:
                 raise ValueError(f"Stop value {stop} must be greater than start value {start}.")
@@ -546,3 +550,181 @@ class Keithley6220:
             except Exception as e:
                 print(f"Error aborting process: {e}")
                 return False
+
+    def query_inner_shield(self):
+        """
+        NOT called directly.
+        Queries the current setting of the inner shield on the 6220.
+        :return: The current inner shield setting (GUARD/OLOW) or None if an error occurs.
+        """
+        try:
+            response = self.query_6220("OUTP:ISHield?")
+            print(f"Current Inner Shield Setting: {response}")
+            return response.strip().upper()
+        except Exception as e:
+            print(f"Error querying inner shield setting: {e}")
+            return None
+
+    def is_output_off(self):
+        """
+        NOT called directly.
+        Checks if the output is OFF before modifying the inner shield.
+        :return: True if OFF, False if ON.
+        """
+        try:
+            response = self.query_6220("OUTP:STATe?").strip()
+            if response == "0":
+                print("Output is OFF. Safe to modify Inner Shield.")
+                return True
+            else:
+                print("Output is ON. Inner Shield modification is not allowed.")
+                return False
+        except Exception as e:
+            print(f"Error querying output state: {e}")
+            return None
+
+    def set_inner_shield_to_guard(self):
+        """
+        Modifies the inner shield to GUARD setting only if the output is OFF.
+        :return: no value
+        """
+        try:
+            if not self.is_output_off():
+                print("❌ Skipping Inner Shield modification: Output is ON.")
+                return
+
+            # Set Inner Shield to Guard
+            self.send_command_to_6220("OUTP:ISHield GUARd")
+
+            # Verify setting
+            response = self.query_inner_shield()
+            if response == "GUARD":
+                print("✅ Inner shield successfully set to Guard.")
+            else:
+                print(f"⚠️ Warning: Inner shield setting not confirmed, received: {response}")
+        except Exception as e:
+            print(f"❌ Error setting inner shield to Guard: {e}")
+
+    def update_output_state(self):
+        """
+        Queries and updates the stored output state.
+        :return: The current output state (ON/OFF) or None if exception happens.
+        """
+        try:
+            response = self.query_6220("OUTP:STATe?").strip()
+            self.output_state = "ON" if response == "1" else "OFF"
+            print(f"🔵 Output State Updated: {self.output_state}")
+            return self.output_state
+        except Exception as e:
+            print(f"❌ Error querying output state: {e}")
+            return None
+
+    def update_inner_shield_status(self):
+        """
+        Queries and updates the stored inner shield status.
+        :return: The current inner shield status (GUARD/OLOW) or None if exception happens.
+        """
+        try:
+            response = self.query_6220("OUTP:ISHield?").strip().upper()
+            self.inner_shield_status = response
+            print(f"🔍 Inner Shield Status Updated: {self.inner_shield_status}")
+            return self.inner_shield_status
+        except Exception as e:
+            print(f"❌ Error querying inner shield setting: {e}")
+            return None
+
+    def turn_output_on(self):
+        """
+        NOT use in differential conductance mode.
+        Turns ON the output of the 6220 and updates stored output state.
+        :return: no value
+        """
+        try:
+            if self.output_state == "ON":
+                print("🔵 Output is already ON. No action taken.")
+                return
+
+            self.send_command_to_6220("OUTP ON")
+            self.update_output_state()
+
+            if self.output_state == "ON":
+                print("✅ Output successfully turned ON.")
+            else:
+                print("⚠️ Warning: Output state not confirmed.")
+        except Exception as e:
+            print(f"❌ Error turning output ON: {e}")
+
+    def turn_output_off(self):
+        """
+        Turns OFF the output of the 6220 and updates the stored output state.
+        :return: no value
+        """
+        try:
+            if self.output_state == "OFF":
+                print("🔵 Output is already OFF. No action taken.")
+                return
+
+            self.send_command_to_6220("OUTP OFF")
+            self.update_output_state()  # Update stored state after command
+
+            if self.output_state == "OFF":
+                print("✅ Output successfully turned OFF.")
+            else:
+                print("⚠️ Warning: Output state not confirmed.")
+        except Exception as e:
+            print(f"❌ Error turning output OFF: {e}")
+
+    def set_measurement_unit(self, unit: str):
+        """
+        Sets the measurement unit for Differential Conductance mode.
+        :param unit: "V" (Volts), "S" (Siemens), "O" (Ohms), "W" (Watts).
+        """
+        try:
+            unit = unit.upper()
+            valid_units = {"V", "S", "O", "W"}
+            if unit not in valid_units:
+                print(f"❌ Invalid unit '{unit}'. Choose from {valid_units}.")
+                return
+
+            self.send_command_to_6220(f"UNIT {unit}")
+            print(f"✅ Measurement unit set to {unit}.")
+        except Exception as e:
+            print(f"❌ Error setting measurement unit: {e}")
+
+    def query_rs232_terminator(self):
+        """
+        Queries the current RS-232 terminator setting of the Keithley 6220.
+
+        :return: The current RS-232 terminator setting (LF, CR, or CRLF), or None if an error occurs.
+        """
+        try:
+            response = self.query_6220("SYST:COMM:SER:TERM?")
+            print(f"RS-232 Terminator Setting: {response}")
+            return response
+        except Exception as e:
+            print(f"Error querying RS-232 terminator setting: {e}")
+            return None
+
+    def set_rs232_terminator_to_lf(self):
+        """
+        Sets the RS-232 terminator of the Keithley 6220 to LF (Line Feed).
+        This ensures consistency with GPIB communication.
+
+        :return: True if successfully set, False otherwise.
+        """
+        try:
+            # Send the command to set RS-232 terminator to LF
+            self.send_command_to_6220("SYST:COMM:SER:TERM LF")
+
+            # Verify the setting
+            current_terminator = self.query_rs232_terminator()
+            if current_terminator == "LF":
+                print("RS-232 Terminator successfully set to LF.")
+                return True
+            else:
+                print(f"Warning: RS-232 terminator not confirmed, received: {current_terminator}")
+                return False
+        except Exception as e:
+            print(f"Error setting RS-232 terminator to LF: {e}")
+            return False
+
