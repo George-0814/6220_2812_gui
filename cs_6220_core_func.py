@@ -1,8 +1,8 @@
 import pyvisa
 import math
 import asyncio
-
-
+import time
+import numpy as np
 ARMING_TIMEOUT = 20  # Maximum time to wait for the arming process to complete
 
 class Keithley6220:
@@ -24,6 +24,8 @@ class Keithley6220:
         self.compliance_abort = None
         self.output_state = None  # Stores ON/OFF state of the output
         self.inner_shield_status = None  # Stores inner shield state (GUARD or OLOW)
+        self.total_points = None
+        self.estimated_time = None
 
     def send_command_to_6220(self, command: str):
         """Send a command to the 6220 with no response expected."""
@@ -231,9 +233,14 @@ class Keithley6220:
             if stop <= start:
                 raise ValueError(f"Stop value {stop} must be greater than start value {start}.")
             # Calculate the number of data points
-            total_points = math.ceil(round((abs(stop-start)/step),6)) + 1
+            self.total_points = math.ceil(round((abs(stop-start)/step),6)) + 1
+            if self.total_points > 65530:
+                raise ValueError(f"Calculated buffer size {self.total_points} exceeds maximum limit of 65530 readings.")
+            # set the buffer size
+            self.set_buffer_size()
+            # Calculate the estimated time for the sweep
             print(f"numerical: {round((abs(stop-start)/step),9)}")
-            estimated_time = total_points * delay
+            self.estimated_time = self.total_points * delay
 
             # Send configuration commands to the device
             self.send_command_to_6220(f"SOUR:DCON:STAR {start}")
@@ -250,8 +257,8 @@ class Keithley6220:
             self.delay = delay
 
             print(f"Parameters configured successfully.")
-            print(f"Total data points: {total_points}, Estimated time: {estimated_time:.3f} seconds.")
-            return total_points, estimated_time
+            print(f"Total data points: {self.total_points}, Estimated time: {self.estimated_time:.3f} seconds.")
+            return self.total_points, self.estimated_time
 
         except ValueError as ve:
             # Catch validation errors and display the message
@@ -590,7 +597,7 @@ class Keithley6220:
         """
         try:
             if not self.is_output_off():
-                print("❌ Skipping Inner Shield modification: Output is ON.")
+                print("Skipping Inner Shield modification: Output is ON.")
                 return
 
             # Set Inner Shield to Guard
@@ -599,11 +606,11 @@ class Keithley6220:
             # Verify setting
             response = self.query_inner_shield()
             if response == "GUARD":
-                print("✅ Inner shield successfully set to Guard.")
+                print("Inner shield successfully set to Guard.")
             else:
-                print(f"⚠️ Warning: Inner shield setting not confirmed, received: {response}")
+                print(f"Warning: Inner shield setting not confirmed, received: {response}")
         except Exception as e:
-            print(f"❌ Error setting inner shield to Guard: {e}")
+            print(f"Error setting inner shield to Guard: {e}")
 
     def update_output_state(self):
         """
@@ -613,10 +620,10 @@ class Keithley6220:
         try:
             response = self.query_6220("OUTP:STATe?").strip()
             self.output_state = "ON" if response == "1" else "OFF"
-            print(f"🔵 Output State Updated: {self.output_state}")
+            print(f"Output State Updated: {self.output_state}")
             return self.output_state
         except Exception as e:
-            print(f"❌ Error querying output state: {e}")
+            print(f"Error querying output state: {e}")
             return None
 
     def update_inner_shield_status(self):
@@ -627,10 +634,10 @@ class Keithley6220:
         try:
             response = self.query_6220("OUTP:ISHield?").strip().upper()
             self.inner_shield_status = response
-            print(f"🔍 Inner Shield Status Updated: {self.inner_shield_status}")
+            print(f"Inner Shield Status Updated: {self.inner_shield_status}")
             return self.inner_shield_status
         except Exception as e:
-            print(f"❌ Error querying inner shield setting: {e}")
+            print(f"Error querying inner shield setting: {e}")
             return None
 
     def turn_output_on(self):
@@ -641,18 +648,18 @@ class Keithley6220:
         """
         try:
             if self.output_state == "ON":
-                print("🔵 Output is already ON. No action taken.")
+                print("Output is already ON. No action taken.")
                 return
 
             self.send_command_to_6220("OUTP ON")
             self.update_output_state()
 
             if self.output_state == "ON":
-                print("✅ Output successfully turned ON.")
+                print("Output successfully turned ON.")
             else:
-                print("⚠️ Warning: Output state not confirmed.")
+                print("Warning: Output state not confirmed.")
         except Exception as e:
-            print(f"❌ Error turning output ON: {e}")
+            print(f"Error turning output ON: {e}")
 
     def turn_output_off(self):
         """
@@ -661,18 +668,18 @@ class Keithley6220:
         """
         try:
             if self.output_state == "OFF":
-                print("🔵 Output is already OFF. No action taken.")
+                print("Output is already OFF. No action taken.")
                 return
 
             self.send_command_to_6220("OUTP OFF")
             self.update_output_state()  # Update stored state after command
 
             if self.output_state == "OFF":
-                print("✅ Output successfully turned OFF.")
+                print("Output successfully turned OFF.")
             else:
-                print("⚠️ Warning: Output state not confirmed.")
+                print("Warning: Output state not confirmed.")
         except Exception as e:
-            print(f"❌ Error turning output OFF: {e}")
+            print(f"Error turning output OFF: {e}")
 
     def set_measurement_unit(self, unit: str):
         """
@@ -683,13 +690,13 @@ class Keithley6220:
             unit = unit.upper()
             valid_units = {"V", "S", "O", "W"}
             if unit not in valid_units:
-                print(f"❌ Invalid unit '{unit}'. Choose from {valid_units}.")
+                print(f"Invalid unit '{unit}'. Choose from {valid_units}.")
                 return
 
             self.send_command_to_6220(f"UNIT {unit}")
-            print(f"✅ Measurement unit set to {unit}.")
+            print(f"Measurement unit set to {unit}.")
         except Exception as e:
-            print(f"❌ Error setting measurement unit: {e}")
+            print(f"Error setting measurement unit: {e}")
 
     def query_rs232_terminator(self):
         """
@@ -727,4 +734,139 @@ class Keithley6220:
         except Exception as e:
             print(f"Error setting RS-232 terminator to LF: {e}")
             return False
+
+    def set_buffer_size(self):
+        """
+        NOT called directly.
+        Sets the buffer size for Differential Conductance based on self.total_points.
+        Ensures the buffer is correctly allocated before starting the test.
+
+        :return: True if buffer size is set successfully, False otherwise.
+        """
+        try:
+            if self.total_points is None:
+                print("Error: Total points not set. Run `set_differential_conductance_params()` first.")
+                return False
+
+            # Set buffer size using pre-calculated total points
+            self.send_command_to_6220(f"TRAC:POIN {self.total_points}")
+            # query the buffer size to verify
+            if self.verify_buffer_size():
+                print(f"Buffer size set to {self.total_points} points.")
+                return True
+            else:
+                print("Error setting buffer size.")
+                return False
+
+        except Exception as e:
+            print(f"Error setting buffer size: {e}")
+            return False
+
+    def verify_buffer_size(self):
+        """
+        Queries the buffer size from the 6220 and verifies it matches the expected self.total_points.
+
+        :return: True if the buffer size matches, False otherwise.
+        """
+        try:
+            # Ensure buffer size was set before verifying
+            if self.total_points is None:
+                print("Error: Total points not set. Run `set_differential_conductance_params()` first.")
+                return False
+
+            # Query the buffer size from the device
+            response = self.query_6220("TRAC:POIN?")
+            if response is None:
+                print("Error querying buffer size.")
+                return False
+
+            queried_buffer_size = int(response)
+
+            # Compare with expected size
+            if queried_buffer_size == self.total_points:
+                print(f"Buffer size verified successfully: {queried_buffer_size} points.")
+                return True
+            else:
+                print(f"Warning: Expected {self.total_points}, but device reports {queried_buffer_size}.")
+                return False
+
+        except Exception as e:
+            print(f"Error verifying buffer size: {e}")
+            return False
+
+    def initialize_differential_conductance(self):
+        """
+        Starts the Differential Conductance measurement if the device is already armed.
+
+        Steps:
+        1. Check if the 6220 is armed.
+        2. If armed, send `INIT:IMM` to start measurement.
+
+        :return: True if measurement starts successfully, False otherwise.
+        """
+        try:
+            print("\n🔹 Initializing Differential Conductance Measurement...")
+
+            # Step 1: Check if the device is armed
+            if not self.check_arm_status():
+                print("Device is not armed. Run `arm_device()` first.")
+                return False
+
+            # Step 2: Start the measurement
+            self.send_command_to_6220("INIT:IMM")
+            print("Differential Conductance Measurement Started.")
+
+            return True
+
+        except Exception as e:
+            print(f"Error initializing Differential Conductance: {e}")
+            return False
+
+    def get_all_differential_conductance_data(self):
+        """
+        Retrieves all stored Differential Conductance readings from the 6220 buffer.
+        Optimized for large datasets (up to 65,536 points), with buffer handling, retries, and timing diagnostics.
+
+        :return:A np array of readings if successful, None if an error occurs.
+        """
+        try:
+            # Configure PyVISA for large data handling
+            self.instrument.timeout = 1000  # Set timeout to 15s for long data transfers
+            self.instrument.chunk_size = 1048576  # Increase buffer size to 1MB
+
+            # Start timing the retrieval process
+            start_time = time.time()
+
+            # Use read_raw() instead of query() to avoid string overhead
+            self.instrument.write("TRAC:DATA?")
+            raw_data = self.instrument.read_raw()  # Reads raw binary data
+            # Calculate time taken
+            retrieval_time = time.time() - start_time
+
+            # Decode response and process as NumPy array
+            response = raw_data.decode("ascii").strip()
+            # Convert response into NumPy array
+            data_points = np.fromstring(response, sep=",", dtype=np.float64)
+
+
+            print(f"Data retrieval took {retrieval_time:.3f} seconds.")
+
+            # Convert response to NumPy array
+
+
+            # Validate data integrity
+            if data_points.size != self.total_points:
+                print(
+                    f"Data integrity warning: Expected {self.total_points} readings, but received {data_points.size}.")
+                return None
+
+            print(f"Successfully retrieved {len(data_points)} measurement points.")
+            return data_points
+
+        except ValueError as ve:
+            print(f"Error processing TRAC:DATA? response: {ve}")
+            return None
+        except Exception as e:
+            print(f"Error retrieving measurement data: {e}")
+            return None
 
