@@ -26,6 +26,7 @@ class Keithley6220:
         self.inner_shield_status = None  # Stores inner shield state (GUARD or OLOW)
         self.total_points = None
         self.estimated_time = None
+        self.output_low_status = None  # Stores the output low status (FLOATING or GROUNDED)
 
     def send_command_to_6220(self, command: str):
         """Send a command to the 6220 with no response expected."""
@@ -50,13 +51,27 @@ class Keithley6220:
                 print(f"Empty response for command: {command}")
                 return None
 
-            # Check for known error message format (e.g., "-221,Settings conflict")
-            if response.startswith("-") or response.startswith("+"):
-                error_code, error_message = response.split(",", 1)
-                error_code = int(error_code.strip())  # Convert error code to integer
-                error_message = error_message.strip()
-                print(f"Device returned error: {error_code}, Message: {error_message}")
-                return None
+            # # Check for known error message format (e.g., "-221,Settings conflict")
+            # if response.startswith("-") or response.startswith("+"):
+            #     error_code, error_message = response.split(",", 1)
+            #     error_code = int(error_code.strip())  # Convert error code to integer
+            #     error_message = error_message.strip()
+            #     print(f"Device returned error: {error_code}, Message: {error_message}")
+            #     print(f"ERROR, Query sent: {command}, Response: {response}")
+            #     return None
+
+            # Check for known SCPI error message format (e.g., "-221,Settings conflict")
+            # SCPI errors are typically in the format "-221, message"
+            if "," in response and (response.startswith("-") or response.startswith("+")):
+                try:
+                    error_code, error_message = response.split(",", 1)
+                    error_code = int(error_code.strip())  # Convert error code to integer
+                    error_message = error_message.strip()
+                    print(f"Device returned error: {error_code}, Message: {error_message}")
+                    return None
+                except ValueError:
+                    print(f"Unexpected response format: {response}")  # Safety check
+                    return None
 
             # Return valid response
             print(f"Query sent: {command}, Response: {response}")
@@ -145,7 +160,7 @@ class Keithley6220:
         """
         try:
 
-            return " Py library loaded successfully."
+            return "library loaded successfully."
         except Exception as e:
             return f"Error loading pyvisa library: {e}"
 
@@ -381,7 +396,7 @@ class Keithley6220:
             print(f"Error monitoring arming status: {e}")
             return False
 
-    async def arm_device(self):
+    def arm_device(self):
         """
         Arms the 6220 for Differential Conductance testing asynchronously.
 
@@ -410,16 +425,16 @@ class Keithley6220:
 
             # Step 4: Send the arm command
             self.send_command_to_6220("SOUR:DCON:ARM")
-            self.under_arming = True
+            # self.under_arming = True
             print("Arming process initiated.")
 
             # todo: check if compliance is needed.
             # special step: enable compliance abort (Default is OFF, so we enable it for safety)
-            self.enable_compliance_abort()
+            # self.enable_compliance_abort()
 
             # Step 5: Monitor the arming status asynchronously
-            success = await self.monitor_arming_status()
-            return success
+            # success = self.monitor_arming_status()
+            return True
 
         except Exception as e:
             print(f"Error during arming process: {e}")
@@ -545,18 +560,18 @@ class Keithley6220:
 
         :return: True if the abort command succeeds, False otherwise.
         """
-        if self.under_arming:
-            print("Arming process is in progress. Cannot abort.")
+        # if self.under_arming:
+        #     print("Arming process is in progress. Cannot abort.")
+        #     return False
+        # else:
+        try:
+            # Send the abort command
+            self.send_command_to_6220("SOUR:SWE:ABOR")
+            print("Process aborted successfully.")
+            return True
+        except Exception as e:
+            print(f"Error aborting process: {e}")
             return False
-        else:
-            try:
-                # Send the abort command
-                self.send_command_to_6220("SOUR:SWE:ABOR")
-                print("Process aborted successfully.")
-                return True
-            except Exception as e:
-                print(f"Error aborting process: {e}")
-                return False
 
     def query_inner_shield(self):
         """
@@ -575,7 +590,7 @@ class Keithley6220:
     def is_output_off(self):
         """
         NOT called directly.
-        Checks if the output is OFF before modifying the inner shield.
+        Checks if the output is OFF before modifying any configuration.
         :return: True if OFF, False if ON.
         """
         try:
@@ -605,7 +620,7 @@ class Keithley6220:
 
             # Verify setting
             response = self.query_inner_shield()
-            if response == "GUARD":
+            if response == "GUARD" or response == "GUAR":
                 print("Inner shield successfully set to Guard.")
             else:
                 print(f"Warning: Inner shield setting not confirmed, received: {response}")
@@ -681,11 +696,35 @@ class Keithley6220:
         except Exception as e:
             print(f"Error turning output OFF: {e}")
 
+    def query_measurement_unit(self):
+        """
+        Queries the current measurement unit setting on the Keithley 6220.
+
+        :return: The current unit as a string ("V", "Ω", "S", or "W"), or None if an error occurs.
+        """
+        try:
+            response = self.query_6220("UNIT?")
+            if response is None:
+                print("Error: Failed to query measurement unit.")
+                return None
+
+            response = response.strip().upper()
+            if response in ["V", "O", "S", "W"]:
+                print(f"Current Measurement Unit: {response}")
+                return response
+            else:
+                print(f"Unexpected response when querying measurement unit: '{response}'")
+                return None
+        except Exception as e:
+            print(f"Error querying measurement unit: {e}")
+            return None
+
     def set_measurement_unit(self, unit: str):
         """
         Sets the measurement unit for Differential Conductance mode.
         :param unit: "V" (Volts), "S" (Siemens), "O" (Ohms), "W" (Watts).
         """
+        # todo: check the unit value "O"
         try:
             unit = unit.upper()
             valid_units = {"V", "S", "O", "W"}
@@ -805,7 +844,7 @@ class Keithley6220:
         :return: True if measurement starts successfully, False otherwise.
         """
         try:
-            print("\n🔹 Initializing Differential Conductance Measurement...")
+            print("Initializing Differential Conductance Measurement...")
 
             # Step 1: Check if the device is armed
             if not self.check_arm_status():
@@ -838,30 +877,24 @@ class Keithley6220:
             start_time = time.time()
 
             # Use read_raw() instead of query() to avoid string overhead
-            self.instrument.write("TRAC:DATA?")
-            raw_data = self.instrument.read_raw()  # Reads raw binary data
+            # self.instrument.write("TRAC:DATA?")
+            # raw_data = self.instrument.read_raw()  # Reads raw binary data
             # Calculate time taken
             retrieval_time = time.time() - start_time
 
             # Decode response and process as NumPy array
-            response = raw_data.decode("ascii").strip()
+            # response = raw_data.decode("ascii").strip()
+
+            response = self.instrument.query("TRAC:DATA?").strip()
+            print(f"the response is {response}")
             # Convert response into NumPy array
-            data_points = np.fromstring(response, sep=",", dtype=np.float64)
+            # data_points = np.fromstring(response, sep=",", dtype=np.float64)
 
 
             print(f"Data retrieval took {retrieval_time:.3f} seconds.")
 
-            # Convert response to NumPy array
-
-
-            # Validate data integrity
-            if data_points.size != self.total_points:
-                print(
-                    f"Data integrity warning: Expected {self.total_points} readings, but received {data_points.size}.")
-                return None
-
-            print(f"Successfully retrieved {len(data_points)} measurement points.")
-            return data_points
+            # print(f"Successfully retrieved {len(data_points)} measurement points.")
+            return None
 
         except ValueError as ve:
             print(f"Error processing TRAC:DATA? response: {ve}")
@@ -870,3 +903,133 @@ class Keithley6220:
             print(f"Error retrieving measurement data: {e}")
             return None
 
+    def set_output_low_floating(self):
+        """
+        Sets the Keithley 6220 output low to floating (`OUTP:LTEarth OFF`).
+        Verifies the setting after applying.
+        """
+        if self.is_output_off():
+            try:
+                # Send command to float the output low
+                self.send_command_to_6220("OUTP:LTEarth OFF")
+
+                # Verify the setting
+                response = self.query_6220("OUTP:LTEarth?")
+                if response is None:
+                    print("Error: Failed to query Output Low status.")
+                    return False
+
+                if response.upper() == "OFF":
+                    print("Output Low successfully set to FLOATING.")
+                    return True
+                else:
+                    print(f"Warning: Expected FLOATING (OFF), but received '{response}'.")
+                    return False
+            except Exception as e:
+                print(f"Error setting Output Low to FLOATING: {e}")
+                return False
+        else:
+            print("Output is ON. Cannot set Output Low to FLOATING.")
+            return False
+
+    def set_output_low_grounded(self):
+        """
+        Sets the Keithley 6220 output low to Earth Ground (`OUTP:LTEarth ON`).
+        Verifies the setting after applying.
+        """
+        if self.is_output_off():
+            try:
+                # Send command to ground the output low
+                self.send_command_to_6220("OUTP:LTEarth ON")
+
+                # Verify the setting
+                response = self.query_6220("OUTP:LTEarth?")
+                if response is None:
+                    print("Error: Failed to query Output Low status.")
+                    return False
+
+                if response.upper() == "ON":
+                    print("Output Low successfully set to EARTH GROUND.")
+                    return True
+                else:
+                    print(f"Warning: Expected EARTH GROUND (ON), but received '{response}'.")
+                    return False
+            except Exception as e:
+                print(f"Error setting Output Low to EARTH GROUND: {e}")
+                return False
+        else:
+            print("Output is ON. Cannot set Output Low to EARTH GROUND.")
+            return False
+
+    def query_output_low_setting(self):
+        """
+        Queries the Keithley 6220 to check whether the Output Low is floating or grounded.
+
+        :return: "ON" (Earth Ground), "OFF" (Floating), or None if an error occurs.
+        """
+        try:
+            response = self.query_6220("OUTP:LTEarth?")
+            if response is None:
+                print("Error: Failed to query Output Low setting.")
+                return None
+
+            response = response.upper()
+            if response in ["ON", "OFF"]:
+                print(f"Current Output Low Setting: {response}")
+                self.output_low_status = response
+                return response
+            else:
+                print(f"Unexpected response when querying Output Low: '{response}'")
+                return None
+        except Exception as e:
+            print(f"Error querying Output Low setting: {e}")
+            return None
+
+    import numpy as np
+
+    def query_diff_cond_data_type(self):
+        """
+        Parses FORM:ELEM? response into structured data based on selected format.
+
+        :param data_points: NumPy array of retrieved measurement points.
+        :return: Dictionary containing parsed data elements.
+        """
+        try:
+            # Query the selected data format
+            format_response = self.query_6220("FORM:ELEM?")
+            # format_elements = format_response.split(",")
+
+            # num_elements = len(format_elements)
+            # if len(data_points) % num_elements != 0:
+            #     print("Warning: Data length mismatch with format settings.")
+            #     return None
+
+            # Reshape data based on selected format
+            # reshaped_data = data_points.reshape(-1, num_elements)
+            #
+            # # Store results in a dictionary
+            # parsed_data = {format_elements[i]: reshaped_data[:, i] for i in range(num_elements)}
+            #
+            # print(f"Parsed {len(reshaped_data)} measurement points.")
+            # return parsed_data
+            print(f"The format response is {format_response}")
+
+        except Exception as e:
+            print(f"Error parsing TRAC:DATA? response: {e}")
+            return None
+
+    def enable_all_data_output(self):
+        """
+        Enables all data output elements for Differential Conductance measurements.
+        (need to enable all data to have full access to the data for future use)
+        :return: True if the command succeeds, False otherwise.
+        """
+        try:
+            # Send the command to enable all data output elements
+            self.send_command_to_6220("FORM:ELEM ALL")
+            print("All data output elements enabled.")
+            # todo: Verify the settings
+            return True
+        except Exception as e:
+            print(f"Error enabling all data output elements: {e}")
+            return False
