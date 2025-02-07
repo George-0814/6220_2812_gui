@@ -6,21 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1188</width>
-    <height>889</height>
+    <width>1252</width>
+    <height>801</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="ui_plot_canva" native="true">
+   <widget class="PlotWidget" name="ui_plot_canva" native="true">
     <property name="geometry">
      <rect>
-      <x>330</x>
-      <y>160</y>
-      <width>811</width>
-      <height>631</height>
+      <x>170</x>
+      <y>250</y>
+      <width>1051</width>
+      <height>471</height>
      </rect>
     </property>
    </widget>
@@ -28,17 +28,17 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>100</y>
-      <width>271</width>
-      <height>91</height>
+      <y>30</y>
+      <width>391</width>
+      <height>71</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>70</y>
+      <x>20</x>
+      <y>10</y>
       <width>121</width>
       <height>16</height>
      </rect>
@@ -50,8 +50,8 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>210</y>
+      <x>440</x>
+      <y>10</y>
       <width>121</width>
       <height>16</height>
      </rect>
@@ -60,44 +60,34 @@
      <string>Keithley 2182A status:</string>
     </property>
    </widget>
-   <widget class="QTextBrowser" name="keithley2182a_statusbox">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>240</y>
-      <width>271</width>
-      <height>91</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QTextEdit" name="start_cur_inputbox">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>410</y>
+      <x>20</x>
+      <y>260</y>
       <width>121</width>
-      <height>41</height>
+      <height>31</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>380</y>
+      <x>20</x>
+      <y>240</y>
       <width>81</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>starting current</string>
+     <string>Start current</string>
     </property>
    </widget>
    <widget class="QLabel" name="start_current_lab">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>380</y>
+      <x>100</x>
+      <y>240</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -109,8 +99,8 @@
    <widget class="QLabel" name="stop_current_lab">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>470</y>
+      <x>100</x>
+      <y>320</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -122,31 +112,31 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>470</y>
+      <x>20</x>
+      <y>320</y>
       <width>81</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>stop current</string>
+     <string>Stop current</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="stop_cur_inputbox">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>500</y>
+      <x>20</x>
+      <y>340</y>
       <width>121</width>
-      <height>41</height>
+      <height>31</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="current_step_lab">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>560</y>
+      <x>100</x>
+      <y>410</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -158,43 +148,311 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>560</y>
+      <x>20</x>
+      <y>410</y>
       <width>81</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>current step size</string>
+     <string>Step size</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="cur_step_inputbox">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>590</y>
+      <x>20</x>
+      <y>430</y>
       <width>121</width>
-      <height>41</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QDoubleSpinBox" name="doubleSpinBox">
-    <property name="geometry">
-     <rect>
-      <x>50</x>
-      <y>670</y>
-      <width>151</width>
       <height>31</height>
      </rect>
     </property>
-    <property name="prefix">
-     <string/>
+   </widget>
+   <widget class="QTextEdit" name="delta_inputbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>510</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
     </property>
-    <property name="suffix">
-     <string/>
+   </widget>
+   <widget class="QLabel" name="delta_label">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>490</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
     </property>
-    <property name="decimals">
-     <number>4</number>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>490</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delta</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="delay_inputbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>600</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="delay_label">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>580</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>580</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delay</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>90</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Remaining time:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="remain_time_label">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>120</y>
+      <width>55</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>XXX</string>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="keithley2182a_statusbox">
+    <property name="geometry">
+     <rect>
+      <x>440</x>
+      <y>30</y>
+      <width>351</width>
+      <height>71</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>150</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>2182A connected?</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="nv_2182a_label">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>180</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>2182A connected?</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>1080</x>
+      <y>20</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Inner shield config</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="inner_shield_label">
+    <property name="geometry">
+     <rect>
+      <x>1080</x>
+      <y>50</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Inner shield config</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="arm_status_label">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>50</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Arm status</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_12">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>20</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Arm status</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="output_status_label">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>50</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Output status</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_13">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>20</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Output status</string>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="console_statusbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>130</y>
+      <width>771</width>
+      <height>91</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_14">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>console:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="totalpoint_label">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>120</y>
+      <width>55</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Total poin</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>90</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Total points</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_15">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>150</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Interlock status:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="interlock_label">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>180</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Interlock status:</string>
     </property>
    </widget>
   </widget>
@@ -203,8 +461,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1188</width>
-     <height>21</height>
+     <width>1252</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuConnect">
@@ -212,16 +470,62 @@
      <string>Connect</string>
     </property>
     <addaction name="actionKeithley6220"/>
-    <addaction name="actionKeithley_2182A"/>
    </widget>
    <widget class="QMenu" name="menuOperation">
     <property name="title">
      <string>Operation</string>
     </property>
+    <addaction name="actionArm_device"/>
+    <addaction name="separator"/>
     <addaction name="actionStart_i_v_measure"/>
+    <addaction name="separator"/>
+    <addaction name="actionStop_i_v_measure"/>
+    <addaction name="separator"/>
+    <addaction name="actionSet_inner_shield_GUARD"/>
+    <addaction name="separator"/>
+    <addaction name="actionInit_measurement"/>
+    <addaction name="separator"/>
+    <addaction name="actionRetrieve_Data"/>
+   </widget>
+   <widget class="QMenu" name="menuDsiconnect">
+    <property name="title">
+     <string>Dsiconnect</string>
+    </property>
+    <addaction name="actionKeithley6220_discon"/>
+   </widget>
+   <widget class="QMenu" name="menuStatus_check">
+    <property name="title">
+     <string>Status check</string>
+    </property>
+    <addaction name="actionInner_shield_config"/>
+    <addaction name="separator"/>
+    <addaction name="actionOutput_Low_config"/>
+    <addaction name="separator"/>
+    <addaction name="actionPower_output"/>
+    <addaction name="separator"/>
+    <addaction name="actionArmed"/>
+    <addaction name="separator"/>
+    <addaction name="actionInterlock"/>
+    <addaction name="separator"/>
+    <addaction name="actionVerify_params"/>
+    <addaction name="separator"/>
+    <addaction name="action2182A_exist"/>
+    <addaction name="separator"/>
+    <addaction name="actionOUTPUT_status"/>
+    <addaction name="separator"/>
+    <addaction name="actionError_message"/>
+   </widget>
+   <widget class="QMenu" name="menuBackend_functions">
+    <property name="title">
+     <string>Backend functions</string>
+    </property>
+    <addaction name="actionStop_arm_query_timer"/>
    </widget>
    <addaction name="menuConnect"/>
    <addaction name="menuOperation"/>
+   <addaction name="menuDsiconnect"/>
+   <addaction name="menuStatus_check"/>
+   <addaction name="menuBackend_functions"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionKeithley6220">
@@ -239,7 +543,95 @@
     <string>Start i-v measure</string>
    </property>
   </action>
+  <action name="actionKeithley6220_discon">
+   <property name="text">
+    <string>Keithley6220</string>
+   </property>
+  </action>
+  <action name="actionInner_shield_config">
+   <property name="text">
+    <string>Inner shield config</string>
+   </property>
+  </action>
+  <action name="actionOutput_Low_config">
+   <property name="text">
+    <string>Output_Low config</string>
+   </property>
+  </action>
+  <action name="actionPower_output">
+   <property name="text">
+    <string>Power output</string>
+   </property>
+  </action>
+  <action name="actionArmed">
+   <property name="text">
+    <string>Armed?</string>
+   </property>
+  </action>
+  <action name="actionStop_i_v_measure">
+   <property name="text">
+    <string>Stop i-v measure</string>
+   </property>
+  </action>
+  <action name="actionArm_device">
+   <property name="text">
+    <string>Arm device</string>
+   </property>
+  </action>
+  <action name="actionInterlock">
+   <property name="text">
+    <string>Interlock</string>
+   </property>
+  </action>
+  <action name="actionSet_inner_shield_GUARD">
+   <property name="text">
+    <string>Set inner shield GUARD</string>
+   </property>
+  </action>
+  <action name="actionVerify_params">
+   <property name="text">
+    <string>Verify params</string>
+   </property>
+  </action>
+  <action name="action2182A_exist">
+   <property name="text">
+    <string>2182A exist?</string>
+   </property>
+  </action>
+  <action name="actionOUTPUT_status">
+   <property name="text">
+    <string>OUTPUT status</string>
+   </property>
+  </action>
+  <action name="actionInit_measurement">
+   <property name="text">
+    <string>Init measurement</string>
+   </property>
+  </action>
+  <action name="actionError_message">
+   <property name="text">
+    <string>Error message</string>
+   </property>
+  </action>
+  <action name="actionRetrieve_Data">
+   <property name="text">
+    <string>Retrieve Data</string>
+   </property>
+  </action>
+  <action name="actionStop_arm_query_timer">
+   <property name="text">
+    <string>Stop arm query timer</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QWidget</extends>
+   <header>pyqtgraph.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

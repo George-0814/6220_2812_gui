@@ -1,3 +1,5 @@
+from http.client import responses
+import re
 import pyvisa
 import math
 import asyncio
@@ -173,19 +175,19 @@ class Keithley6220:
         try:
             response = self.query_6220("SYST:ERR?")
             print(response)
-            # error_code, error_message = response.split(",", 1)
-            # error_code = int(error_code.strip())  # Convert error code to an integer
-            # error_message = error_message.strip().strip('"')  # Clean up the error message
-            #
-            # if error_code == 0:
-            #     print("No errors.")
-            #     return None
-            # else:
-            #     print(f"Error detected: {error_code}, Message: {error_message}")
-            #     return error_code, error_message
+            error_code, error_message = response.split(",", 1)
+            error_code = int(error_code.strip())  # Convert error code to an integer
+            error_message = error_message.strip().strip('"')  # Clean up the error message
+
+            if error_code == 0:
+                print("No errors.")
+                return None
+            else:
+                print(f"Error detected: {error_code}, Message: {error_message}")
+                return error_code, error_message
         except Exception as e:
             print(f"Error querying the 6220 for errors: {e}")
-            return None
+            return f"Exception: {e}"
 
     def check_2182a_presence(self):
         """
@@ -226,7 +228,7 @@ class Keithley6220:
 
     def set_differential_conductance_params(self, start, stop, step, delay=0.002, delta=1e-5):
         """
-        Configures the parameters for a Differential Conductance test with validation and estimates the sweep time.
+        Configures the parameters and buffer size for a Differential Conductance test with validation and estimates the sweep time.
 
         :param start: Start current in amperes (-105e-3 to 105e-3).
         :param stop: Stop current in amperes (-105e-3 to 105e-3).
@@ -234,7 +236,7 @@ class Keithley6220:
         :param delay: Delay time in seconds (1e-3 to 9999.999, default = 0.002).
         :param delta: Delta current in amperes (0 to 105e-3, default = 1e-6).
         # todo : check the delta value minimum (is allowd to 1e-5 not 1e-6)
-        :return: Total number of data points and estimated time for the sweep (seconds), or None if validation fails.
+        :return: tuple (total_points, estimated_time) for the sweep, or (None, message) if validation fails.
         """
         try:
             # Validate parameters
@@ -273,19 +275,20 @@ class Keithley6220:
 
             print(f"Parameters configured successfully.")
             print(f"Total data points: {self.total_points}, Estimated time: {self.estimated_time:.3f} seconds.")
-            return self.total_points, self.estimated_time
+            return str(self.total_points), f"{self.estimated_time:.3f}"
 
         except ValueError as ve:
             # Catch validation errors and display the message
             print(f"Validation Error: {ve}")
-            return None, None
+            return None, f"Validation Error: {ve}"
         except Exception as e:
             # Catch any other unexpected errors
             print(f"Error setting parameters: {e}")
-            return None, None
+            return None, f"Error setting parameters: {e}"
 
     def verify_params(self):
         """
+        Not called directly
         Verifies that the parameters are correctly set on the device by querying the 6220 and comparing the values.
 
         :return: True if all parameters match, False otherwise.
@@ -323,7 +326,7 @@ class Keithley6220:
         """
         Checks if the interlock switch is closed.
 
-        :return: True if interlock is closed (output enabled), False otherwise.
+        :return: True if interlock is closed (output enabled), False otherwise. None for error.
         """
         try:
             response = self.query_6220("OUTP:INT:TRIPped?")
@@ -335,7 +338,7 @@ class Keithley6220:
                 return False
         except Exception as e:
             print(f"Error checking interlock status: {e}")
-            return False
+            return None
 
     def check_arm_status(self):
         """
@@ -352,49 +355,50 @@ class Keithley6220:
             elif response == "0":
                 print("Not armed. parameters are not set.")
                 return False
-            else:
-                print(f"Unexpected arming status: {response}")
-                return None
+            # else:
+            #     print(f"Unexpected arming status: {response}")
+            #     return None
         except Exception as e:
             print(f"Error checking arm status: {e}")
             return None
 
-    async def monitor_arming_status(self, timeout=ARMING_TIMEOUT, interval=1):
-        """
-        (Do not use this for checking status. Not called directly)
-        Monitors the arming status of the 6220 asynchronously .
-
-
-        :param timeout: Maximum time (in seconds) to wait for the arming process to complete.
-        :param interval: Time (in seconds) between each status check.
-        :return: True if the device is armed successfully, False otherwise.
-        """
-        try:
-            elapsed_time = 0
-            while elapsed_time < timeout:
-                status = self.query_6220("SOUR:DCON:ARM?")
-                if status == "1":
-                    print("Device armed successfully. Ready to start the test.")
-                    self.is_armed = True
-                    self.under_arming = False
-                    return True
-                elif status == "0":
-                    print("Building sweep table. Please wait...")
-                    await asyncio.sleep(interval)  # Non-blocking wait
-                    elapsed_time += interval
-                else:
-                    print(f"Unexpected arming status: {status}")
-                    self.is_armed = False
-                    self.under_arming = False
-                    return False
-
-            print("Arming process timed out.")
-            # todo: abort the process if needed
-            return False
-
-        except Exception as e:
-            print(f"Error monitoring arming status: {e}")
-            return False
+    # async def monitor_arming_status(self, timeout=ARMING_TIMEOUT, interval=1):
+    #     """
+    #     (BUG NOT FIXED)
+    #     (Do not use this for checking status. Not called directly)
+    #     Monitors the arming status of the 6220 asynchronously .
+    #
+    #
+    #     :param timeout: Maximum time (in seconds) to wait for the arming process to complete.
+    #     :param interval: Time (in seconds) between each status check.
+    #     :return: True if the device is armed successfully, False otherwise.
+    #     """
+    #     try:
+    #         elapsed_time = 0
+    #         while elapsed_time < timeout:
+    #             status = self.query_6220("SOUR:DCON:ARM?")
+    #             if status == "1":
+    #                 print("Device armed successfully. Ready to start the test.")
+    #                 self.is_armed = True
+    #                 self.under_arming = False
+    #                 return True
+    #             elif status == "0":
+    #                 print("Building sweep table. Please wait...")
+    #                 await asyncio.sleep(interval)  # Non-blocking wait
+    #                 elapsed_time += interval
+    #             else:
+    #                 print(f"Unexpected arming status: {status}")
+    #                 self.is_armed = False
+    #                 self.under_arming = False
+    #                 return False
+    #
+    #         print("Arming process timed out.")
+    #         # todo: abort the process if needed
+    #         return False
+    #
+    #     except Exception as e:
+    #         print(f"Error monitoring arming status: {e}")
+    #         return False
 
     def arm_device(self):
         """
@@ -404,6 +408,11 @@ class Keithley6220:
         - Parameters are verified and match the device's settings.
         - 2182A Nanovoltmeter is detected.
         - Interlock is closed.
+        Steps:
+        - Verify params
+        - Check 2182A
+        - Check interlock
+        - Send arm command
 
         :return: True if the device is armed successfully, False otherwise.
         """
@@ -425,15 +434,8 @@ class Keithley6220:
 
             # Step 4: Send the arm command
             self.send_command_to_6220("SOUR:DCON:ARM")
-            # self.under_arming = True
+
             print("Arming process initiated.")
-
-            # todo: check if compliance is needed.
-            # special step: enable compliance abort (Default is OFF, so we enable it for safety)
-            # self.enable_compliance_abort()
-
-            # Step 5: Monitor the arming status asynchronously
-            # success = self.monitor_arming_status()
             return True
 
         except Exception as e:
@@ -560,10 +562,7 @@ class Keithley6220:
 
         :return: True if the abort command succeeds, False otherwise.
         """
-        # if self.under_arming:
-        #     print("Arming process is in progress. Cannot abort.")
-        #     return False
-        # else:
+
         try:
             # Send the abort command
             self.send_command_to_6220("SOUR:SWE:ABOR")
@@ -613,7 +612,7 @@ class Keithley6220:
         try:
             if not self.is_output_off():
                 print("Skipping Inner Shield modification: Output is ON.")
-                return
+                return "OUTPUT_ON"
 
             # Set Inner Shield to Guard
             self.send_command_to_6220("OUTP:ISHield GUARd")
@@ -622,10 +621,13 @@ class Keithley6220:
             response = self.query_inner_shield()
             if response == "GUARD" or response == "GUAR":
                 print("Inner shield successfully set to Guard.")
+                return True
             else:
                 print(f"Warning: Inner shield setting not confirmed, received: {response}")
+                return False
         except Exception as e:
             print(f"Error setting inner shield to Guard: {e}")
+            return None
 
     def update_output_state(self):
         """
@@ -866,7 +868,7 @@ class Keithley6220:
         Retrieves all stored Differential Conductance readings from the 6220 buffer.
         Optimized for large datasets (up to 65,536 points), with buffer handling, retries, and timing diagnostics.
 
-        :return:A np array of readings if successful, None if an error occurs.
+        :return:A raw data of readings if successful, None if an error occurs.
         """
         try:
             # Configure PyVISA for large data handling
@@ -894,7 +896,7 @@ class Keithley6220:
             print(f"Data retrieval took {retrieval_time:.3f} seconds.")
 
             # print(f"Successfully retrieved {len(data_points)} measurement points.")
-            return None
+            return response
 
         except ValueError as ve:
             print(f"Error processing TRAC:DATA? response: {ve}")
@@ -902,6 +904,32 @@ class Keithley6220:
         except Exception as e:
             print(f"Error retrieving measurement data: {e}")
             return None
+
+    def parse_iv_data(self, raw_data):
+        """Parses raw device data into separate current (ADC) and voltage (VDC) arrays.
+
+        :param raw_data: Raw data string from the device.
+        :return: Tuple containing current and voltage arrays, or empty arrays if parsing fails.
+        """
+        try:
+            readings = raw_data.split("#")  # ✅ Split data based on delimiter
+            current_values = []
+            voltage_values = []
+
+            for entry in readings:
+                # ✅ Extract values using regex
+                voltage_matches = re.findall(r"([-+]?\d+\.\d+E[-+]?\d+)VDC", entry)
+                current_matches = re.findall(r"([-+]?\d+\.\d+E[-+]?\d+)ADC", entry)
+
+                if voltage_matches and current_matches:
+                    voltage_values.append(float(voltage_matches[0]))
+                    current_values.append(float(current_matches[0]))
+
+            return current_values, voltage_values
+
+        except Exception as e:
+            print(f"Error parsing raw data: {e}")
+            return [], []
 
     def set_output_low_floating(self):
         """
@@ -948,7 +976,7 @@ class Keithley6220:
                     print("Error: Failed to query Output Low status.")
                     return False
 
-                if response.upper() == "ON":
+                if str(response) == "1":
                     print("Output Low successfully set to EARTH GROUND.")
                     return True
                 else:
@@ -973,8 +1001,8 @@ class Keithley6220:
                 print("Error: Failed to query Output Low setting.")
                 return None
 
-            response = response.upper()
-            if response in ["ON", "OFF"]:
+            response = str(response)
+            if response in ["0", "1"]:
                 print(f"Current Output Low Setting: {response}")
                 self.output_low_status = response
                 return response
@@ -985,7 +1013,7 @@ class Keithley6220:
             print(f"Error querying Output Low setting: {e}")
             return None
 
-    import numpy as np
+
 
     def query_diff_cond_data_type(self):
         """
@@ -1013,6 +1041,7 @@ class Keithley6220:
             # print(f"Parsed {len(reshaped_data)} measurement points.")
             # return parsed_data
             print(f"The format response is {format_response}")
+            return format_response
 
         except Exception as e:
             print(f"Error parsing TRAC:DATA? response: {e}")
@@ -1022,14 +1051,23 @@ class Keithley6220:
         """
         Enables all data output elements for Differential Conductance measurements.
         (need to enable all data to have full access to the data for future use)
-        :return: True if the command succeeds, False otherwise.
+        :return: True if the command succeeds, False otherwise. None for error.
         """
         try:
             # Send the command to enable all data output elements
             self.send_command_to_6220("FORM:ELEM ALL")
             print("All data output elements enabled.")
             # todo: Verify the settings
-            return True
+            expected_response = "READ,UNIT,RNUM,TST,COMP,SOUR,AVOL"
+            response = self.query_diff_cond_data_type()
+            if response == expected_response:
+                print("All data output elements verified.")
+                return True
+            else:
+                print(f"Unexpected data output elements: {response}")
+                return False
         except Exception as e:
             print(f"Error enabling all data output elements: {e}")
-            return False
+            return None
+
+        #412: Diff. Conductance upranged
